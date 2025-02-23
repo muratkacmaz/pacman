@@ -20,6 +20,7 @@ from idlelib.autocomplete_w import LISTUPDATE_SEQUENCE
 from xml.sax.xmlreader import AttributesImpl
 
 import game
+import searchAgents
 import util
 from game import Directions
 from typing import List
@@ -117,7 +118,6 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     # Return an empty list if no solution is found
     return []
-    
 
 def breadthFirstSearch(problem: SearchProblem, startState = (-1,-1) ) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
@@ -172,94 +172,49 @@ def breadthFirstSearch(problem: SearchProblem, startState = (-1,-1) ) -> List[Di
         
     return actions + breadthFirstSearch(temp_problem, state)
 
-
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
 
-def nullHeuristic(state, problem=None) -> float:
+def nullHeuristic(state, problem=None, goals = []) -> float:
     """
     A heuristic function estimates the cost from the current state to the nearest
     goal in the provided SearchProblem.  This heuristic is trivial.
     """
     
     return 0
-    
-    goal_state = problem.goal
-    if goal_state is not None:
-        return abs(state[0] - goal_state[0]) + abs(state[1] - goal_state[1])
-    else:
-        return 0.0
-
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
     """Search the node that has the lowest combined cost and heuristic first."""
-    if hasattr(problem, 'corners'):
-        print("a1 ", aStarSearchCorners(problem, heuristic))
-        return aStarSearchCorners(problem, heuristic)
-    elif hasattr(problem, 'goal'):
-        print("a2 ", aStarSearchGoal(problem, heuristic))
-        return aStarSearchGoal(problem, heuristic)
-    elif hasattr(problem, 'start'):
-        print("a3 ", aStarSearchFood(problem, heuristic))
-        return aStarSearchFood(problem, heuristic)
+    goals = []
+    startState = problem.getStartState()
+    if(type(problem) == searchAgents.PositionSearchProblem):
+        goals.append(problem.goal)
+        return aStarSearchGoals(problem, goals, startState, heuristic)
+    elif(type(problem) == searchAgents.CornersProblem):
+        goals = list(problem.corners)
+        return aStarSearchGoals(problem, goals, startState, heuristic)
+    elif(type(problem) == searchAgents.FoodSearchProblem):
+        startState, food_positions = problem.start
+        goals = convert_grid_to_coordinates(food_positions)
+        return aStarSearchGoals(problem, goals, startState, heuristic)
     else:
+        print("Invalid problem type, " + type(problem))
 
-        print("a4 ", problem.goals)
-        return[]
-
-def aStarSearchCorners(problem: SearchProblem, heuristic=nullHeuristic, startState=(-1, -1)) -> List[Directions]:
-    """A* search for problems with 'corners' attribute."""
-    open_list = util.PriorityQueue()
-    close_list = []
-    temp_problem = problem
-    temp_problem_corners = list(temp_problem.corners)
-
-    if startState == (-1, -1):
-        start_state = temp_problem.getStartState()
-    else:
-        start_state = startState
-
-    open_list.push((start_state, []), heuristic(start_state, temp_problem))
-
-    while not open_list.isEmpty():
-        state, actions = open_list.pop()
-
-        if state in temp_problem_corners:
-            temp_problem_corners.remove(state)
-            break
-
-        if state not in close_list:
-            close_list.append(state)
-            successors = temp_problem.getSuccessors(state)
-
-            for successor in successors:
-                next_state, action, step_cost = successor
-                new_actions = actions + [action]
-                cost = temp_problem.getCostOfActions(new_actions) + heuristic(next_state, temp_problem)
-                open_list.push((next_state, new_actions), cost)
-
-    temp_problem.corners = tuple(temp_problem_corners)
-    if not temp_problem_corners:
-        return actions
-    else:
-        return actions + aStarSearchCorners(temp_problem, heuristic, state)
-
-def aStarSearchGoal(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
+def aStarSearchGoals(problem: SearchProblem, goals, startState, heuristic=nullHeuristic) -> List[Directions]:
     """A* search for problems with 'goal' attribute."""
     open_list = util.PriorityQueue()
     close_list = []
 
-    start_state = problem.getStartState()
-   
-
-    open_list.push((start_state, []), heuristic(start_state, problem))
+    start_state = startState
+    open_list.push((start_state, []), heuristic(start_state, problem, goals))
 
     while not open_list.isEmpty():
         state, actions = open_list.pop()
 
-        if state == problem.goal:
+        if goals.__contains__(state):
+            goals.remove(state)
             break
 
         if state not in close_list:
@@ -269,45 +224,14 @@ def aStarSearchGoal(problem: SearchProblem, heuristic=nullHeuristic) -> List[Dir
             for successor in successors:
                 next_state, action, step_cost = successor
                 new_actions = actions + [action]
-                cost = problem.getCostOfActions(new_actions) + heuristic(next_state, problem)
+                cost = problem.getCostOfActions(new_actions) + heuristic(next_state, problem, goals)
                 open_list.push((next_state, new_actions), cost)
 
-    return actions
-
-def aStarSearchFood(problem, heuristic = nullHeuristic) -> List[Directions]:
-    """A* search for problems with 'food' attribute."""
-    open_list = util.PriorityQueue()
-    close_list = []
-
-    start_state, food_positions = problem.start
-    coordinates = convert_grid_to_coordinates(food_positions)
-        
-    open_list.push((start_state, []), heuristic((start_state,food_positions), problem))
-
-    while not open_list.isEmpty():
-        state, actions = open_list.pop()
-
-        if state in coordinates:
-            coordinates.remove(state)
-            break
-
-        if state not in close_list:
-            close_list.append(state)
-            current_state = (state, food_positions)
-            successors = problem.getSuccessors(current_state)
-
-            for successor in successors:
-                new_actions = actions + [successor[1]]
-                cost = problem.getCostOfActions(new_actions) + heuristic(successor[0], problem)
-                open_list.push((successor[0][0], new_actions), cost)
-
-    updated_food_positions = convert_coordinates_to_grid(coordinates, food_positions.width, food_positions.height)
-    problem.start = (state, updated_food_positions)
-    if not coordinates:
+    if goals == []:
         return actions
     else:
-        return actions + aStarSearchFood(problem, heuristic)
-
+        return actions + aStarSearchGoals(problem, goals, state, heuristic)
+    
 def convert_grid_to_coordinates(grid):
     coordinates = []
     for row_index in range(grid.height):

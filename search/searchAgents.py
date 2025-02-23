@@ -302,7 +302,6 @@ class CornersProblem(search.SearchProblem):
         """
         Returns whether this search state is a goal state of the problem.
         """
-       
         return state in self.corners
         
 
@@ -351,7 +350,7 @@ class CornersProblem(search.SearchProblem):
 
 
 
-def cornersHeuristic(state: Any, problem: CornersProblem):
+def cornersHeuristic(state: Any, problem: CornersProblem, goals = []):
     """
     A heuristic for the CornersProblem that you defined.
 
@@ -364,7 +363,7 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible.
     """
-    corners = problem.corners # These are the corner coordinates
+    corners = goals # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     current_position = state
@@ -398,7 +397,7 @@ class FoodSearchProblem:
         self.heuristicInfo = {} # A dictionary for the heuristic to store information
 
     def getStartState(self):
-        return self.start
+        return self.start[0]
 
     def isGoalState(self, state):
         return state[1].count() == 0
@@ -408,19 +407,20 @@ class FoodSearchProblem:
         successors = []
         self._expanded += 1 # DO NOT CHANGE
         for direction in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            x,y = state[0]
+            x,y = state
             dx, dy = Actions.directionToVector(direction)
             nextx, nexty = int(x + dx), int(y + dy)
             if not self.walls[nextx][nexty]:
-                nextFood = state[1].copy()
+                nextFood = self.start[1].copy()
                 nextFood[nextx][nexty] = False
-                successors.append( ( ((nextx, nexty), nextFood), direction, 1) )
+                successors.append(((nextx, nexty), direction, 1))
         return successors
 
     def getCostOfActions(self, actions):
         """Returns the cost of a particular sequence of actions.  If those actions
         include an illegal move, return 999999"""
-        x,y= self.getStartState()[0]
+        print(self.getStartState())
+        x,y= self.getStartState()
         cost = 0
         for action in actions:
             # figure out the next state and see whether it's legal
@@ -437,7 +437,7 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         self.searchType = FoodSearchProblem
 
-def foodHeuristic(state: Tuple[Tuple[int, int], List[List[bool]]], problem: FoodSearchProblem) -> int:
+def foodHeuristic(state: Tuple[int, int], problem: FoodSearchProblem, goals = []) -> int:
     """
     Your heuristic for the FoodSearchProblem goes here.
 
@@ -454,13 +454,17 @@ def foodHeuristic(state: Tuple[Tuple[int, int], List[List[bool]]], problem: Food
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    pacmanPosition, food_positions = state
-    foodList = food_positions.asList()
-
+    pacmanPosition = state
+    foodList = goals
     if not foodList:
         return 0
 
+    """print each distance """
+    for food in foodList:
+        print(util.manhattanDistance(pacmanPosition, food))
+    
     maxDistance = max(util.manhattanDistance(pacmanPosition, food) for food in foodList)
+    
     return maxDistance
 
 
