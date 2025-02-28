@@ -16,15 +16,13 @@
 In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
-from idlelib.autocomplete_w import LISTUPDATE_SEQUENCE
-from xml.sax.xmlreader import AttributesImpl
 
-import game
-import searchAgents
 import util
 from game import Directions
 from typing import List
 from util import Stack
+from util import Queue
+from util import PriorityQueue
 
 class SearchProblem:
     """
@@ -68,6 +66,7 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
+
 def tinyMazeSearch(problem: SearchProblem) -> List[Directions]:
     """
     Returns a sequence of moves that solves tinyMaze.  For any other maze, the
@@ -86,166 +85,142 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 
     To get started, you might want to try some of these simple commands to
     understand the search problem that is being passed in:
-
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
+
+    print("Problem Type:", type(problem))
     print("Start:", problem.getStartState())
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
 
-    # Initialize the stack with the start state and an empty list of actions
+
+    # Stack initialization with empty list and start state
     stack = Stack()
-    stack.push((problem.getStartState(), []))
+    start_state = problem.getStartState()
+    stack.push((start_state, []))  
+    
+    # Holds the visited states
+    visited = set()
+
+    while not stack.isEmpty():
+        current_state, path = stack.pop()
+
+        # If the state is already visited, skip processing
+        if current_state in visited:
+            continue
+        
+        # Append visited list with the current state
+        visited.add(current_state)
+
+        # Check if goal is reached
+        if problem.isGoalState(current_state):
+            return path
+
+        # Expand the node and add its successors
+        for successor, action, cost in problem.getSuccessors(current_state):
+            if successor not in visited:
+                stack.push((successor, path + [action]))
+
+    return []  # If no solution is found
+
+def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
+    """Search the shallowest nodes in the search tree first."""
+
+    # Queue initialization with empty list and start state
+    queue = Queue()
+    start_state = problem.getStartState()
+    queue.push((start_state, []))
+    
+    # Holds the visited states
     visited = set()
     
-    while not stack.isEmpty():
-        # Pop the current state and the actions to reach it from the stack
-        current_state, actions = stack.pop()
+    while not queue.isEmpty():
+        current_state, path = queue.pop()
 
-        # If the current state is the goal, return the actions
+        # If the state is already visited, skip processing
+        if current_state in visited:
+            continue
+
+        # Append visited list with the current state
+        visited.add(current_state)
+
+        # Check if goal is reached
         if problem.isGoalState(current_state):
-            return actions
-
-        # If the current state has not been visited
-        if current_state not in visited:
-            # Mark the current state as visited
-            # Get the successors of the current state
-            for successor, action, step_cost in problem.getSuccessors(current_state):
-                # Push the successor state and the updated actions to the stack
-                stack.push((successor, actions + [action]))
-
-    # Return an empty list if no solution is found
-    return []
-
-def breadthFirstSearch(problem: SearchProblem, startState = (-1,-1) ) -> List[Directions]:
-    """Search the shallowest nodes in the search tree first."""
-    """initilize the open and close LISt"""
-    open_list = util.Queue()
-    close_list = []
-    temp_problem = problem
-    goal_list = []
-    
-    if hasattr(temp_problem, 'corners'):
-        goal_list = list(temp_problem.corners)
-    elif hasattr(temp_problem, 'goal'):
-        goal_list.append(temp_problem.goal)
-    
-    if(startState == (-1,-1)):
-        open_list.push((temp_problem.getStartState(), []))
-    else:
-        open_list.push((startState, []))
-    
-    """while the open list is not empty"""
-    while not open_list.isEmpty():
-        """pop the state"""
-        state, actions = open_list.pop()
+            return path
         
-        """if the state is the goal state"""
-        if problem.isGoalState(state):
-            if goal_list.__contains__(state):
-                goal_list.remove(state)
-            break
-        
-        """if the state is not in the close list"""
-        if state not in close_list:
-            """push the state to the close list"""
-            close_list.append(state)
-            
-            """get the successors of the state"""
-            successors = temp_problem.getSuccessors(state)
-            
-            """for each successor"""
-            for successor in successors:
-                """get the state, action and step cost"""
-                state, action, step_cost = successor
-                
-                """push the successor to the open list"""
-                open_list.push((state, actions + [action]))
+        for successor, action, cost in problem.getSuccessors(current_state):
+            if successor not in visited:
+                queue.push((successor, path + [action]))
 
-    if goal_list == []:
-        return actions
-    
-    if hasattr(temp_problem, 'corners'):
-        temp_problem.corners = tuple(goal_list)
-        
-    return actions + breadthFirstSearch(temp_problem, state)
 
 def uniformCostSearch(problem: SearchProblem) -> List[Directions]:
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    
+    priorityQueue = PriorityQueue()
+    start_state = problem.getStartState()
+    priorityQueue.push((start_state, [], 0), 0)
+    
+    visited = set()
+    
+    while not priorityQueue.isEmpty():
+        state, path, cost = priorityQueue.pop()
+        
+        if state in visited:
+            continue
+            
+        visited.add(state)
+        
+        if problem.isGoalState(state):
+            return path
+        
+        for successor, action, step_cost in problem.getSuccessors(state):
+            if successor not in visited:
+                priorityQueue.push((successor, path + [action], cost + step_cost), cost + step_cost)
+    return []
 
-def nullHeuristic(state, problem=None, goals = []) -> float:
+def nullHeuristic(state, problem=None) -> float:
     """
     A heuristic function estimates the cost from the current state to the nearest
     goal in the provided SearchProblem.  This heuristic is trivial.
     """
-    
     return 0
 
-def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic) -> List[Directions]:
-    """Search the node that has the lowest combined cost and heuristic first."""
-    goals = []
-    startState = problem.getStartState()
-    if(type(problem) == searchAgents.PositionSearchProblem):
-        goals.append(problem.goal)
-        return aStarSearchGoals(problem, goals, startState, heuristic)
-    elif(type(problem) == searchAgents.CornersProblem):
-        goals = list(problem.corners)
-        return aStarSearchGoals(problem, goals, startState, heuristic)
-    elif(type(problem) == searchAgents.FoodSearchProblem):
-        startState, food_positions = problem.start
-        goals = convert_grid_to_coordinates(food_positions)
-        return aStarSearchGoals(problem, goals, startState, heuristic)
-    else:
-        print("Invalid problem type, " + type(problem))
+def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
+    """
+    Search the node that has the lowest combined cost and heuristic first.
+    """
 
-def aStarSearchGoals(problem: SearchProblem, goals, startState, heuristic=nullHeuristic) -> List[Directions]:
-    """A* search for problems with 'goal' attribute."""
-    open_list = util.PriorityQueue()
-    close_list = []
+    # Priority queue stores (total_cost, state, path, g_cost)
+    priorityQueue = PriorityQueue()
+    start_state = problem.getStartState()
+    priorityQueue.push((start_state, [], 0), 0)  # (state, path, cost), priority=f(n)
 
-    start_state = startState
-    open_list.push((start_state, []), heuristic(start_state, problem, goals))
+    # **Tracking visited states and their best g(n) cost**
+    visited = {}
 
-    while not open_list.isEmpty():
-        state, actions = open_list.pop()
+    while not priorityQueue.isEmpty():
+        state, path, g_cost = priorityQueue.pop()
 
-        if goals.__contains__(state):
-            goals.remove(state)
-            break
+        # **If goal reached, return the path**
+        if problem.isGoalState(state):
+            return path
 
-        if state not in close_list:
-            close_list.append(state)
-            successors = problem.getSuccessors(state)
+        # **If this state was visited with a lower cost before, skip it**
+        if state in visited and visited[state] <= g_cost:
+            continue
+        
+        # **Mark the state with the lowest found cost**
+        visited[state] = g_cost
 
-            for successor in successors:
-                next_state, action, step_cost = successor
-                new_actions = actions + [action]
-                cost = problem.getCostOfActions(new_actions) + heuristic(next_state, problem, goals)
-                open_list.push((next_state, new_actions), cost)
+        # **Expand the current node**
+        for successor, action, cost in problem.getSuccessors(state):
+            new_g_cost = g_cost + cost  # g(n) = current cost + step cost
+            f_cost = new_g_cost + heuristic(successor, problem)  # f(n) = g(n) + h(n)
 
-    if goals == []:
-        return actions
-    else:
-        return actions + aStarSearchGoals(problem, goals, state, heuristic)
-    
-def convert_grid_to_coordinates(grid):
-    coordinates = []
-    for row_index in range(grid.height):
-        for col_index in range(grid.width):
-            if grid[col_index][row_index] == True:
-                coordinates.append((col_index, row_index))
-    return coordinates
+            # **Push into priority queue only if it's a new or better path**
+            if successor not in visited or visited[successor] > new_g_cost:
+                priorityQueue.push((successor, path + [action], new_g_cost), f_cost)
 
-def convert_coordinates_to_grid(coordinates, width, height):
-    grid = game.Grid(width, height)
-    for coordinate in coordinates:
-        col_index, row_index  = coordinate
-        grid[col_index][row_index] = True
-    return grid
+    return []  # No solution found
 
 # Abbreviations
 bfs = breadthFirstSearch
