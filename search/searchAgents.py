@@ -335,7 +335,7 @@ class CornersProblem(search.SearchProblem):
             # update successors
             successors.append(((next_position, frozenset(new_visited_corners)), action, 1))
 
-        self._expanded += 1  # DO NOT CHANGE
+        self._expanded += 1 # DO NOT CHANGE
         return successors
 
     def getCostOfActions(self, actions):
