@@ -93,7 +93,7 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
 
 
-    # Stack initialization with empty list and start state
+    # stack initialization with empty list and start state
     stack = Stack()
     start_state = problem.getStartState()
     stack.push((start_state, []))  
@@ -104,18 +104,18 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
     while not stack.isEmpty():
         current_state, path = stack.pop()
 
-        # If the state is already visited, skip processing
+        # if the state is already visited, skip processing
         if current_state in visited:
             continue
         
-        # Append visited list with the current state
+        # append visited list with the current state
         visited.add(current_state)
 
-        # Check if goal is reached
+        # check if goal is reached
         if problem.isGoalState(current_state):
             return path
 
-        # Expand the node and add its successors
+        # expand the node and add its successors
         for successor, action, cost in problem.getSuccessors(current_state):
             if successor not in visited:
                 stack.push((successor, path + [action]))
@@ -125,25 +125,25 @@ def depthFirstSearch(problem: SearchProblem) -> List[Directions]:
 def breadthFirstSearch(problem: SearchProblem) -> List[Directions]:
     """Search the shallowest nodes in the search tree first."""
 
-    # Queue initialization with empty list and start state
+    # queue initialization with empty list and start state
     queue = Queue()
     start_state = problem.getStartState()
     queue.push((start_state, []))
     
-    # Holds the visited states
+    # holds the visited states
     visited = set()
     
     while not queue.isEmpty():
         current_state, path = queue.pop()
 
-        # If the state is already visited, skip processing
+        # if the state is already visited, skip processing
         if current_state in visited:
             continue
 
-        # Append visited list with the current state
+        # append visited list with the current state
         visited.add(current_state)
 
-        # Check if goal is reached
+        # check if goal is reached
         if problem.isGoalState(current_state):
             return path
         
@@ -188,41 +188,38 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """
     Search the node that has the lowest combined cost and heuristic first.
     """
-
-    # Priority queue stores (total_cost, state, path, g_cost)
+    
+    # priority queue stores (total_cost, state, path, g_cost)
     priorityQueue = PriorityQueue()
     start_state = problem.getStartState()
     priorityQueue.push((start_state, [], 0), 0)  # (state, path, cost), priority=f(n)
-
-    # **Tracking visited states and their best g(n) cost**
     visited = {}
 
     while not priorityQueue.isEmpty():
         state, path, g_cost = priorityQueue.pop()
 
-        # **If goal reached, return the path**
+        # return path if goal is reached
         if problem.isGoalState(state):
             return path
 
-        # **If this state was visited with a lower cost before, skip it**
+        # skip if state is already visited and has a lower cost
         if state in visited and visited[state] <= g_cost:
             continue
         
-        # **Mark the state with the lowest found cost**
+        # update the cost of the state
         visited[state] = g_cost
 
-        # **Expand the current node**
+        # expand the node and add its successors
         for successor, action, cost in problem.getSuccessors(state):
             new_g_cost = g_cost + cost  # g(n) = current cost + step cost
             f_cost = new_g_cost + heuristic(successor, problem)  # f(n) = g(n) + h(n)
 
-            # **Push into priority queue only if it's a new or better path**
+            # push to the priority queue if the state is not visited or has a lower cost
             if successor not in visited or visited[successor] > new_g_cost:
                 priorityQueue.push((successor, path + [action], new_g_cost), f_cost)
 
-    return []  # No solution found
+    return []  
 
-# Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch

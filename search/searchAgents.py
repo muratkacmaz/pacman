@@ -42,6 +42,7 @@ import util
 import time
 import search
 import pacman
+import math
 
 class GoWestAgent(Agent):
     "An agent that goes West until it can't."
@@ -322,16 +323,16 @@ class CornersProblem(search.SearchProblem):
             dx, dy = Actions.directionToVector(action)
             next_position = (int(x + dx), int(y + dy))
 
-            # Only adding valid successors- those that are not walls
+            # if the next position is a wall, skip it
             if self.walls[next_position[0]][next_position[1]]:
                 continue
 
-            # Update visited corners
+            # update visited corners
             new_visited_corners = set(visited_corners)
             if next_position in self.corners:
                 new_visited_corners.add(next_position) 
 
-            # Update successors
+            # update successors
             successors.append(((next_position, frozenset(new_visited_corners)), action, 1))
 
         self._expanded += 1  # DO NOT CHANGE
@@ -374,10 +375,10 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     if not remaining_corners: 
         return 0
 
-    #Min distance with manhattan distance
+    # min distance with manhattan distance
     min_distance = min(util.manhattanDistance(position, corner) for corner in remaining_corners)
 
-    # Estimate the cost to reach the farthest corner
+    # estimate the cost to reach the farthest corner
     total_distance = min_distance  # Start with distance to the closest corner
     current_pos = min(remaining_corners, key=lambda c: util.manhattanDistance(position, c))
     remaining_corners.remove(current_pos)
@@ -484,7 +485,7 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     if not food_positions: 
         return 0
 
-    # Compute the maximum distance from the current position to any food
+    # manhattan distance to calculate the distance to the farthest food
     max_distance = max(util.manhattanDistance(position, food) for food in food_positions)
 
     return max_distance
